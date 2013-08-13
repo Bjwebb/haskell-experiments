@@ -2,7 +2,9 @@ import Text.JSON
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Data.List
+import qualified Data.ByteString.UTF8 as UTF8
 import qualified Crypto.Hash.SHA1 as SHA1
+import qualified Data.ByteString.Base64 as Base64
 
 import System.IO  
 
@@ -53,14 +55,17 @@ loop contents nodeid = do
         node = nodesMap Map.! nodeid
         direction :: Double -> Double -> String
         direction x y
-            | xl && x>0 = "East"
-            | xl && x<0 = "West"
-            | not xl && y>0 = "North"
-            | not xl && y<0 = "South"
-            where xl = (abs x) > (abs y)
+            | a*(abs x) > (abs y) = if x>0 then "East" else "West"
+            | a*(abs y) > (abs x) = if y>0 then "North" else "South"
+            | x>0 && y>0 = "North East"
+            | x>0 && y<0 = "South East"
+            | x<0 && y>0 = "North West"
+            | x<0 && y<0 = "South West"
+            where a = tan(pi/8)
 
-    --print $ enumerate c
-    --print $ SHA1.hash $ encode nodeid
+    -- print $ enumerate c
+    putStrLn ""
+    print $ Base64.encode $ SHA1.hash $ UTF8.fromString $ encode nodeid
     print $ nodeid
     print $ enumerate $ map (\x -> direction (x!"lon"-node!"lon") (x!"lat"-node!"lat") ) $ map (nodesMap Map.!) c
     test <- getLine
