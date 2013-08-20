@@ -10,8 +10,6 @@ import System.IO
 
 j a = decode a :: Result JSValue
 
-isOk (Ok _) = True
-isOk _ = False
 
 
 enumerate = zip [0..]
@@ -37,8 +35,9 @@ loop contents nodeid = do
         waysByNode = invert $ map (\x -> (x!"id", x!"nodes")) ways :: Map.Map Int [Int]
         nodesByWay = Map.fromList $ map (\x -> (x!"id", x!"nodes")) ways :: Map.Map Int [Int]
         (JSObject x) ! y = let Ok a = valFromObj y x in a
-        (JSObject x) ? y =
-            isOk (valFromObj y x :: Result JSValue)
+        (JSObject x) !? y = let a = valFromObj y x in case a of
+            Ok b -> Just b
+            _ -> Nothing
         Ok json = j contents
         elements = json ! "elements" :: [JSValue] 
 
@@ -67,7 +66,12 @@ loop contents nodeid = do
     putStrLn ""
     print $ Base64.encode $ SHA1.hash $ UTF8.fromString $ encode nodeid
     print $ nodeid
-    print $ enumerate $ map (\x -> direction (x!"lon"-node!"lon") (x!"lat"-node!"lat") ) $ map (nodesMap Map.!) c
+    print $ enumerate $ map (
+        \x -> (
+            direction (x!"lon"-node!"lon") (x!"lat"-node!"lat")
+            , map (\y->(waysMap Map.! y)!"tags"!?"name" :: Maybe String) $ waysByNode Map.! (x!"id")
+            )
+        ) $ map (nodesMap Map.!) c
     test <- getLine
     case lookup (read test) (enumerate c) of
         Just nextnode -> loop contents nextnode
