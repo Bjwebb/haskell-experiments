@@ -66,7 +66,7 @@ loop contents nodeid = do
     putStrLn ""
     print $ Base64.encode $ SHA1.hash $ UTF8.fromString $ encode nodeid
     print $ nodeid
-    print $ enumerate $ map (
+    mapM_ print $ enumerate $ map (
         \x -> (
             direction (x!"lon"-node!"lon") (x!"lat"-node!"lat")
             , map (\y->(waysMap Map.! y)!"tags"!?"name" :: Maybe String) $ waysByNode Map.! (x!"id")
